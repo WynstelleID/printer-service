@@ -15,8 +15,8 @@ const options = { encoding: "GB18030" /* default */ };
 const printer = new escpos.Printer(device, options);
 
 const corsOptions = {
-  origin: "http://localhost:3000", // Allow requests from this origin
-  methods: "POST", // Allow only POST requests
+  origin: "http://localhost:3000",
+  methods: "POST",
 };
 
 app.use(express.json());
@@ -24,29 +24,40 @@ app.use(cors(corsOptions));
 
 app.post("/print", (req, res) => {
   const { message } = req.body;
-  //printer usb
-  device.open(function (error) {
-    printer
-      .font("a")
-      .align("ct")
-      .style("bu")
-      .size(1, 1)
-      .text(message)
-      // .barcode("1234567", "EAN8")
-      // .table(["One", "Two", "Three"])
-      // .tableCustom(
-      //   [
-      //     { text: "Left", align: "LEFT", width: 0.33, style: "B" },
-      //     { text: "Center", align: "CENTER", width: 0.33 },
-      //     { text: "Right", align: "RIGHT", width: 0.33 },
-      //   ],
-      //   { encoding: "cp857", size: [1, 1] } // Optional
-      // )
-      .qrimage(message, function (err) {
-        this.cut();
-        this.close();
-      });
-  });
+
+  try {
+    device.open((error) => {
+      if (error) {
+        console.error("Error opening printer:", error);
+        throw new Error("Failed to open printer");
+      }
+
+      printer
+        .font("a")
+        .align("ct")
+        .style("bu")
+        .size(1, 1)
+        .text(message)
+        .qrimage(message, (err) => {
+          if (err) {
+            console.error("Error printing QR code:", err);
+            device.close();
+            throw new Error("Failed to print QR code");
+          }
+
+          printer.cut();
+          printer.close();
+          res
+            .status(200)
+            .json({ success: true, message: "Printed successfully" });
+        });
+    });
+  } catch (error) {
+    console.error("Error occurred while printing:", error);
+    res
+      .status(500)
+      .json({ success: false, error: "Error occurred while printing" });
+  }
 });
 
 app.listen(port, () => {
