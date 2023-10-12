@@ -6,23 +6,23 @@ const cors = require("cors");
 const escpos = require("escpos");
 // install escpos-usb adapter module manually
 escpos.USB = require("escpos-usb");
-// Select the adapter based on your printer type
-const device = new escpos.USB();
-// const device  = new escpos.Network('localhost');
-// const device  = new escpos.Serial('/dev/usb/lp0');
-
-const options = { encoding: "GB18030" /* default */ };
-const printer = new escpos.Printer(device, options);
 
 const corsOptions = {
-  origin: "http://localhost:3000",
-  methods: "POST",
+  origin: "*",
 };
 
 app.use(express.json());
 app.use(cors(corsOptions));
+app.use(express.urlencoded({ extended: false }));
 
 app.post("/print", (req, res) => {
+  // Select the adapter based on your printer type
+  const device = new escpos.USB();
+  // const device  = new escpos.Network('localhost');
+  // const device  = new escpos.Serial('/dev/usb/lp0');
+
+  const options = { encoding: "GB18030" /* default */ };
+  const printer = new escpos.Printer(device, options);
   const { message } = req.body;
 
   try {
